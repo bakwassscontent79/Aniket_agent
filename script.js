@@ -29,7 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_HISTORY_MESSAGES = 30; // Maximum messages per chat
     let currentResponseElement = null; // Element for current streaming response
     let currentResponseText = ''; // Accumulated response text
-    let apiKey = localStorage.getItem('aniket-api-key') || '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'; // Default or stored API key
+    
+    // Use the provided API key as default, but allow users to override it
+    const DEFAULT_API_KEY = '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';
+    let apiKey = localStorage.getItem('aniket-api-key') || DEFAULT_API_KEY;
     
     // Initialize the app
     function init() {
@@ -42,6 +45,28 @@ document.addEventListener('DOMContentLoaded', () => {
             switchToChat(chatIds[chatIds.length - 1]);
         }
         renderChatHistory();
+        
+        // Show API key setup message for first-time users
+        if (!localStorage.getItem('aniket-api-key') && apiKey === DEFAULT_API_KEY) {
+            setTimeout(() => {
+                const setupMessage = document.createElement('div');
+                setupMessage.className = 'message ai-message';
+                setupMessage.innerHTML = `
+                    <p>Hello! I'm Aniket, your AI assistant.</p>
+                    <p><strong>Important:</strong> To use this application, you'll need an OpenRouter API key.</p>
+                    <p>You can either:</p>
+                    <ul>
+                        <li>Get your own free API key from <a href="https://openrouter.ai/keys" target="_blank" class="api-link">OpenRouter</a></li>
+                        <li>Or continue using the default key (may be rate-limited)</li>
+                    </ul>
+                    <p>Click <button id="setup-api-key" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">here</button> to set up your API key.</p>
+                `;
+                chatMessages.appendChild(setupMessage);
+                
+                document.getElementById('setup-api-key').addEventListener('click', openApiKeyModal);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 1000);
+        }
     }
     
     // Create a new chat
@@ -134,6 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!formatted.startsWith('<')) {
             formatted = '<p>' + formatted + '</p>';
         }
+        
+        // Add special handling for links in AI responses
+        formatted = formatted.replace(/href="([^"]*)"/g, 'href="$1" target="_blank"');
         
         return formatted;
     }
@@ -326,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Open API key modal
     function openApiKeyModal() {
-        apiKeyInput.value = apiKey;
+        apiKeyInput.value = apiKey === DEFAULT_API_KEY ? '' : apiKey;
         apiKeyModal.style.display = 'flex';
         apiKeyInput.focus();
     }
@@ -406,33 +434,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 { role: "user", content: prompt }
             ];
             
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            // Try with current API key first
+            let response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${apiKey}`,
-                    "HTTP-Referer": "https://your-site-url.com",
+                    "HTTP-Referer": window.location.origin || "https://your-site-url.com",
                     "X-Title": "Aniket AI Assistant",
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     "model": "deepseek/deepseek-chat-v3.1:free",
                     "messages": apiMessages,
-                    "stream": false // Streaming would require a different implementation
+                    "stream": false
                 })
             });
+            
+            // If the current key fails and we're not already using the default, try the default key
+            if (!response.ok && apiKey !== DEFAULT_API_KEY) {
+                console.log('Current API key failed, trying with default key...');
+                response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${DEFAULT_API_KEY}`,
+                        "HTTP-Referer": window.location.origin || "https://your-site-url.com",
+                        "X-Title": "Aniket AI Assistant",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "model": "deepseek/deepseek-chat-v3.1:free",
+                        "messages": apiMessages,
+                        "stream": false
+                    })
+                });
+                
+                // If default key works, update the UI to inform user
+                if (response.ok) {
+                    const infoMessage = document.createElement('div');
+                    infoMessage.className = 'message ai-message';
+                    infoMessage.innerHTML = '<p><strong>Note:</strong> Your custom API key failed, so we\'re using the default key. For better performance, please update your API key.</p>';
+                    chatMessages.appendChild(infoMessage);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            }
             
             // Remove loading indicator
             document.getElementById('loading-indicator')?.remove();
             
             // Handle different response statuses
             if (response.status === 401) {
-                throw new Error('Invalid API key. Please update your API key in settings.');
+                throw new Error('Invalid API key. Please get a new API key from OpenRouter and update it in the settings.');
             } else if (response.status === 429) {
-                throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+                throw new Error('Rate limit exceeded. Please wait a moment and try again, or use your own API key.');
             } else if (response.status >= 500) {
                 throw new Error('Server error. Please try again later.');
             } else if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
+                throw new Error(`API request failed with status ${response.status}. Please check your connection and try again.`);
             }
             
             const data = await response.json();
@@ -451,14 +508,30 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show specific error message
             const errorDiv = document.createElement('div');
             errorDiv.className = 'message ai-message';
-            errorDiv.textContent = error.message || 'Sorry, I encountered an error. Please try again.';
+            
+            if (error.message && error.message.includes('Invalid API key')) {
+                errorDiv.innerHTML = `
+                    <p><strong>API Key Error:</strong> ${error.message}</p>
+                    <p>To fix this:</p>
+                    <ol>
+                        <li>Get a free API key from <a href="https://openrouter.ai/keys" target="_blank" class="api-link">OpenRouter</a></li>
+                        <li>Click <button id="update-api-key" class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">Update API Key</button> to enter your key</li>
+                    </ol>
+                `;
+                
+                // Add event listener to the button
+                setTimeout(() => {
+                    const updateBtn = document.getElementById('update-api-key');
+                    if (updateBtn) {
+                        updateBtn.addEventListener('click', openApiKeyModal);
+                    }
+                }, 100);
+            } else {
+                errorDiv.textContent = error.message || 'Sorry, I encountered an error. Please try again.';
+            }
+            
             chatMessages.appendChild(errorDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // If it's an API key error, prompt user to update it
-            if (error.message && error.message.includes('API key')) {
-                setTimeout(openApiKeyModal, 2000);
-            }
         }
     }
     
@@ -486,7 +559,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Save API key to localStorage
     function saveApiKey() {
-        localStorage.setItem('aniket-api-key', apiKey);
+        if (apiKeyInput.value.trim()) {
+            apiKey = apiKeyInput.value.trim();
+            localStorage.setItem('aniket-api-key', apiKey);
+        } else {
+            // If user clears the input, reset to default
+            apiKey = DEFAULT_API_KEY;
+            localStorage.removeItem('aniket-api-key');
+        }
     }
     
     // Event listeners
@@ -529,11 +609,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // API Key modal event listeners
     saveApiKeyBtn.addEventListener('click', () => {
-        apiKey = apiKeyInput.value.trim();
-        if (apiKey) {
-            saveApiKey();
-            closeModals();
-        }
+        saveApiKey();
+        closeModals();
+        
+        // Show confirmation message
+        const confirmationMessage = document.createElement('div');
+        confirmationMessage.className = 'message ai-message';
+        confirmationMessage.innerHTML = '<p>API key updated successfully! You can now continue using the assistant.</p>';
+        chatMessages.appendChild(confirmationMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     });
     
     cancelApiKeyBtn.addEventListener('click', closeModals);
@@ -556,11 +640,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Allow Enter key in API key modal
     apiKeyInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            apiKey = apiKeyInput.value.trim();
-            if (apiKey) {
-                saveApiKey();
-                closeModals();
-            }
+            saveApiKey();
+            closeModals();
+            
+            // Show confirmation message
+            const confirmationMessage = document.createElement('div');
+            confirmationMessage.className = 'message ai-message';
+            confirmationMessage.innerHTML = '<p>API key updated successfully! You can now continue using the assistant.</p>';
+            chatMessages.appendChild(confirmationMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     });
     
