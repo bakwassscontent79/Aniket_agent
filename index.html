@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aniket - Your AI Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="space-header">
+            <div class="stars"></div>
+            <div class="stars2"></div>
+            <div class="stars3"></div>
+            <div class="space-content">
+                <div class="logo-container">
+                    <div class="planet-orbit">
+                        <div class="planet"></div>
+                    </div>
+                    <div class="ai-symbol">🤖</div>
+                </div>
+                <h1>Aniket - Your AI Assistant</h1>
+                <div class="subtitle">Powered by Space Technology</div>
+            </div>
+        </header>
+        <div class="main-layout">
+            <aside class="history-panel">
+                <div class="panel-header">
+                    <h2>Chat History</h2>
+                    <button id="new-chat-btn" class="new-chat-button">+ New Chat</button>
+                </div>
+                <ul id="chat-history-list" class="chat-history-list">
+                    <!-- Chat history items will be populated here -->
+                </ul>
+            </aside>
+            <main class="chat-main">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message welcome-message">
+                            <p>Hello! I'm Aniket, your AI assistant. How can I help you today?</p>
+                        </div>
+                    </div>
+                    <div class="input-area">
+                        <div class="input-box">
+                            <input type="text" id="user-input" placeholder="Message Aniket...">
+                            <button id="send-button">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modals for rename and delete -->
+    <div id="rename-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rename Chat</h3>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="new-chat-title" placeholder="Enter new chat title">
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-rename" class="btn btn-secondary">Cancel</button>
+                <button id="confirm-rename" class="btn btn-primary">Rename</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="delete-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Delete Chat</h3>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this chat? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-delete" class="btn btn-secondary">Cancel</button>
+                <button id="confirm-delete" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
