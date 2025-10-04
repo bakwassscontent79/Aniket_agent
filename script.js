@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const newChatBtn = document.getElementById('new-chat-btn');
     const chatHistoryList = document.getElementById('chat-history-list');
+    const toggleSidebarBtn = document.getElementById('toggle-sidebar');
     
     // Modal elements
     const renameModal = document.getElementById('rename-modal');
@@ -649,6 +650,27 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmationMessage.innerHTML = '<p>API key updated successfully! You can now continue using the assistant.</p>';
             chatMessages.appendChild(confirmationMessage);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    });
+    
+    // Add event listener for sidebar toggle
+    if (toggleSidebarBtn) {
+        toggleSidebarBtn.addEventListener('click', () => {
+            const historyPanel = document.querySelector('.history-panel');
+            historyPanel.classList.toggle('active');
+        });
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+        const historyPanel = document.querySelector('.history-panel');
+        const toggleBtn = document.getElementById('toggle-sidebar');
+        
+        if (window.innerWidth <= 480 && 
+            historyPanel.classList.contains('active') && 
+            !historyPanel.contains(e.target) && 
+            e.target !== toggleBtn) {
+            historyPanel.classList.remove('active');
         }
     });
     

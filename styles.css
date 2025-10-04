@@ -724,6 +724,25 @@ body {
 
 @media (max-width: 480px) {
     .history-panel {
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        z-index: 99;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        width: 250px;
+    }
+    
+    .history-panel.active {
+        left: 0;
+    }
+    
+    .toggle-sidebar-btn {
+        display: block;
+    }
+    
+    .history-panel {
         display: none;
     }
     
@@ -757,4 +776,22 @@ body {
         width: 16px;
         height: 16px;
     }
+}
+
+/* Toggle sidebar button for mobile */
+.toggle-sidebar-btn {
+    display: none;
+    position: fixed;
+    top: 80px;
+    left: 10px;
+    background: linear-gradient(135deg, #4a9bff, #1a3a8f);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
