@@ -720,6 +720,10 @@ body {
     .subtitle {
         font-size: 14px;
     }
+    
+    .toggle-sidebar-btn {
+        display: block;
+    }
 }
 
 @media (max-width: 480px) {
@@ -732,6 +736,7 @@ body {
         transition: left 0.3s ease;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
         width: 250px;
+        display: block; /* Ensure it's always displayed */
     }
     
     .history-panel.active {
@@ -740,10 +745,8 @@ body {
     
     .toggle-sidebar-btn {
         display: block;
-    }
-    
-    .history-panel {
-        display: none;
+        top: 80px;
+        left: 10px;
     }
     
     .message {

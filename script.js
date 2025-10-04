@@ -48,7 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderChatHistory();
         
         // Show API key setup message for first-time users
-        if (!localStorage.getItem('aniket-api-key') && apiKey === DEFAULT_API_KEY) {
+        // Check if this is the first time and there are no chats
+        if (!localStorage.getItem('aniket-api-key') && 
+            apiKey === DEFAULT_API_KEY && 
+            Object.keys(chats).length === 0) {
             setTimeout(() => {
                 const setupMessage = document.createElement('div');
                 setupMessage.className = 'message ai-message';
@@ -90,6 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
         currentChatId = chatId;
         renderChatMessages();
         updateActiveChatInHistory();
+        
+        // Close sidebar on mobile after selecting a chat
+        if (window.innerWidth <= 480) {
+            const historyPanel = document.querySelector('.history-panel');
+            historyPanel.classList.remove('active');
+        }
     }
     
     // Render chat messages for current chat
@@ -655,7 +664,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add event listener for sidebar toggle
     if (toggleSidebarBtn) {
-        toggleSidebarBtn.addEventListener('click', () => {
+        toggleSidebarBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const historyPanel = document.querySelector('.history-panel');
             historyPanel.classList.toggle('active');
         });
@@ -673,6 +683,19 @@ document.addEventListener('DOMContentLoaded', () => {
             historyPanel.classList.remove('active');
         }
     });
+    
+    // Also close sidebar when switching chats on mobile
+    function switchToChat(chatId) {
+        currentChatId = chatId;
+        renderChatMessages();
+        updateActiveChatInHistory();
+        
+        // Close sidebar on mobile after selecting a chat
+        if (window.innerWidth <= 480) {
+            const historyPanel = document.querySelector('.history-panel');
+            historyPanel.classList.remove('active');
+        }
+    }
     
     // Initialize the app
     init();
