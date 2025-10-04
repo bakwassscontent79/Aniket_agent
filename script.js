@@ -16,6 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelDeleteBtn = document.getElementById('cancel-delete');
     const confirmDeleteBtn = document.getElementById('confirm-delete');
     
+    // API Key modal elements
+    const apiKeyModal = document.getElementById('api-key-modal');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveApiKeyBtn = document.getElementById('save-api-key');
+    const cancelApiKeyBtn = document.getElementById('cancel-api-key');
+    
     // Application state
     let chats = {}; // Store all chats
     let currentChatId = null; // ID of currently active chat
@@ -23,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_HISTORY_MESSAGES = 30; // Maximum messages per chat
     let currentResponseElement = null; // Element for current streaming response
     let currentResponseText = ''; // Accumulated response text
+    let apiKey = localStorage.getItem('aniket-api-key') || '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'; // Default or stored API key
     
     // Initialize the app
     function init() {
@@ -317,10 +324,18 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteModal.style.display = 'flex';
     }
     
+    // Open API key modal
+    function openApiKeyModal() {
+        apiKeyInput.value = apiKey;
+        apiKeyModal.style.display = 'flex';
+        apiKeyInput.focus();
+    }
+    
     // Close all modals
     function closeModals() {
         renameModal.style.display = 'none';
         deleteModal.style.display = 'none';
+        apiKeyModal.style.display = 'none';
         chatToManage = null;
     }
     
@@ -394,7 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: {
-                    "Authorization": "Bearer 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",
+                    "Authorization": `Bearer ${apiKey}`,
                     "HTTP-Referer": "https://your-site-url.com",
                     "X-Title": "Aniket AI Assistant",
                     "Content-Type": "application/json"
@@ -409,7 +424,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove loading indicator
             document.getElementById('loading-indicator')?.remove();
             
-            if (!response.ok) {
+            // Handle different response statuses
+            if (response.status === 401) {
+                throw new Error('Invalid API key. Please update your API key in settings.');
+            } else if (response.status === 429) {
+                throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+            } else if (response.status >= 500) {
+                throw new Error('Server error. Please try again later.');
+            } else if (!response.ok) {
                 throw new Error(`API request failed with status ${response.status}`);
             }
             
@@ -426,12 +448,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove loading indicator
             document.getElementById('loading-indicator')?.remove();
             
-            // Show error message
+            // Show specific error message
             const errorDiv = document.createElement('div');
             errorDiv.className = 'message ai-message';
-            errorDiv.textContent = 'Sorry, I encountered an error. Please try again.';
+            errorDiv.textContent = error.message || 'Sorry, I encountered an error. Please try again.';
             chatMessages.appendChild(errorDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // If it's an API key error, prompt user to update it
+            if (error.message && error.message.includes('API key')) {
+                setTimeout(openApiKeyModal, 2000);
+            }
         }
     }
     
@@ -455,6 +482,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Failed to load chats from storage:', error);
             chats = {};
         }
+    }
+    
+    // Save API key to localStorage
+    function saveApiKey() {
+        localStorage.setItem('aniket-api-key', apiKey);
     }
     
     // Event listeners
@@ -495,12 +527,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Close modals when clicking outside
-    window.addEventListener('click', (e) => {
-        if (e.target === renameModal) {
+    // API Key modal event listeners
+    saveApiKeyBtn.addEventListener('click', () => {
+        apiKey = apiKeyInput.value.trim();
+        if (apiKey) {
+            saveApiKey();
             closeModals();
         }
-        if (e.target === deleteModal) {
+    });
+    
+    cancelApiKeyBtn.addEventListener('click', closeModals);
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === renameModal || e.target === deleteModal || e.target === apiKeyModal) {
             closeModals();
         }
     });
@@ -510,6 +550,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter' && chatToManage) {
             renameChat(chatToManage, newChatTitleInput.value);
             closeModals();
+        }
+    });
+    
+    // Allow Enter key in API key modal
+    apiKeyInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            apiKey = apiKeyInput.value.trim();
+            if (apiKey) {
+                saveApiKey();
+                closeModals();
+            }
         }
     });
     

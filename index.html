@@ -82,6 +82,28 @@
         </div>
     </div>
     
+    <!-- API Key Modal -->
+    <div id="api-key-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Update API Key</h3>
+            </div>
+            <div class="modal-body">
+                <p>Please enter your OpenRouter API key:</p>
+                <input type="password" id="api-key-input" placeholder="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">
+                <p class="api-key-info">
+                    Don't have an API key? Visit 
+                    <a href="https://openrouter.ai/keys" target="_blank" class="api-link">OpenRouter</a> 
+                    to get one.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-api-key" class="btn btn-secondary">Cancel</button>
+                <button id="save-api-key" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

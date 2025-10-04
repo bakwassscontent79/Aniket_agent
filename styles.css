@@ -327,11 +327,27 @@ body {
     box-sizing: border-box;
     background-color: #0d1520;
     color: #e0e0e0;
+    margin-bottom: 10px;
 }
 
-.modal-body p {
-    margin: 0;
-    line-height: 1.6;
+.modal-body input[type="password"] {
+    font-family: monospace;
+}
+
+.api-key-info {
+    font-size: 14px;
+    color: #a0c0ff;
+    margin-top: 15px;
+    line-height: 1.4;
+}
+
+.api-link {
+    color: #4a9bff;
+    text-decoration: none;
+}
+
+.api-link:hover {
+    text-decoration: underline;
 }
 
 .modal-footer {
